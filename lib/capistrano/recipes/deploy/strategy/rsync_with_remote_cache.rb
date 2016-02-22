@@ -12,7 +12,8 @@ module Capistrano
           :subversion => {:url_command => "svn info . | sed -n \'s/URL: //p\'",                      :exclusions => '.svn*'},
           :git        => {:url_command => "git config remote.origin.url",                            :exclusions => '.git*'},
           :mercurial  => {:url_command => "hg showconfig paths.default",                             :exclusions => '.hg*'},
-          :bzr        => {:url_command => "bzr info | grep parent | sed \'s/^.*parent branch: //\'", :exclusions => '.bzr*'}
+          :bzr        => {:url_command => "bzr info | grep parent | sed \'s/^.*parent branch: //\'", :exclusions => '.bzr*'},
+          :none       => {:url_command => "", :exclusions => ''}
         }
 
         def self.default_attribute(attribute, default_value)
@@ -118,7 +119,11 @@ module Capistrano
 
         def command
           if local_cache_valid?
-            source.sync(revision, local_cache_path)
+            if configuration[:scm] == :none
+              source.checkout(revision, local_cache_path)
+            else
+              source.sync(revision, local_cache_path)
+            end
           elsif !local_cache_exists?
             "mkdir -p #{local_cache_path} && #{source.checkout(revision, local_cache_path)}"
           else
